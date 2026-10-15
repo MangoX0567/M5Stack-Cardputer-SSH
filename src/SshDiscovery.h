@@ -34,7 +34,9 @@ public:
 
 private:
     bool ensureMdns();
+#ifdef ARDUINO
     bool mdnsStarted_ = false;
+#endif
 };
 
 }  // namespace app

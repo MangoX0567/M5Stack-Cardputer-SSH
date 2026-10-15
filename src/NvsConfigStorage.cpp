@@ -1,12 +1,22 @@
 #include "NvsConfigStorage.h"
 
 #include <Preferences.h>
+#include <nvs.h>
 
 namespace app {
 
 namespace {
 
 constexpr char kNamespace[] = "pi-console";
+
+// A namespace that has never been written can't be opened read-only. On a
+// fresh device that just means nothing is saved yet, not a storage failure.
+bool namespaceMissing() {
+    nvs_handle_t handle = 0;
+    const esp_err_t result = nvs_open(kNamespace, NVS_READONLY, &handle);
+    if (result == ESP_OK) nvs_close(handle);
+    return result == ESP_ERR_NVS_NOT_FOUND;
+}
 
 }  // namespace
 
@@ -18,7 +28,7 @@ BlobStatus NvsConfigStorage::length(const char* key, size_t& result) {
 
     Preferences preferences;
     if (!preferences.begin(kNamespace, true)) {
-        return BlobStatus::Error;
+        return namespaceMissing() ? BlobStatus::Missing : BlobStatus::Error;
     }
     if (!preferences.isKey(key)) {
         preferences.end();
